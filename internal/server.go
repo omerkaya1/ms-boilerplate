@@ -13,6 +13,15 @@ type Server struct {
 	Logger *zap.Logger
 }
 
+func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	s.Logger.Sugar().Infof("Received: %s request.", req.Method)
+	w.WriteHeader(http.StatusOK)
+	_, err := io.WriteString(w, "Hello, world!\n")
+	if err != nil {
+		s.Logger.Sugar().Error(err)
+	}
+}
+
 func NewServer(path string) (*Server, error) {
 	if path == "" {
 		return nil, fmt.Errorf("path to a config file was not specified")
@@ -31,28 +40,4 @@ func NewServer(path string) (*Server, error) {
 func (s *Server) Run() {
 	s.Logger.Sugar().Info("Server started")
 	s.Logger.Sugar().Errorf("%v", http.ListenAndServe(s.Cfg.Host+":"+s.Cfg.Port, s))
-}
-
-func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	s.Logger.Sugar().Infof("Received: %s request.", req.Method)
-	io.WriteString(w, "Hello, world!\n")
-}
-
-func InitLogger(level int) (*zap.Logger, error) {
-	l := &zap.Logger{}
-	var err error
-	switch level {
-	case 0:
-		l = zap.NewExample()
-		break
-	case 1:
-		l, err = zap.NewProduction()
-		break
-	case 2:
-		l, err = zap.NewDevelopment()
-		break
-	default:
-		panic(fmt.Sprintf("incorrect logging level: %v", level))
-	}
-	return l, err
 }
